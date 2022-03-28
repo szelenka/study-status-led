@@ -7,6 +7,8 @@ In our case, we want the device to poll for the Public status of a particular us
 occupying the Study Room), and animate the [NeoPixel][3] strip outside. This will allow others
 to know if the person in the room is available or not.
 
+View a quick demo of it in action on [YouTube][17]!
+
 ## Meeting Source
 
 We primarily use [Cisco Webex][4] for virtual meetings, and they have a simple [Bot API][5] interface we 
@@ -105,4 +107,5 @@ STATUS_UNKNOWN = STATUS_INACTIVE
 [13]: https://www.lowes.com/pd/Gorilla-Wood-Glue-Off-White-Interior-Exterior-Wood-Adhesive-Actual-Net-Contents-8-fl-oz/3121069
 [14]: https://www.spectrum-scientifics.com/Test-Tube-32-x-200-w-rim-Borosilicate-Glass-p/7632.htm
 [15]: https://www.spectrum-scientifics.com/Test-Tubes-w-Rim-25mm-x-200mm-p/3980.htm
-[16]: https://www.prusaprinters.org/prints
+[16]: https://www.prusaprinters.org/prints/155946-black-iron-pipe-led-meeting-status-indicator
+[17]: https://www.youtube.com/watch?v=wzJczCJFJXQ
