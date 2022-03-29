@@ -108,4 +108,4 @@ STATUS_UNKNOWN = STATUS_INACTIVE
 [14]: https://www.spectrum-scientifics.com/Test-Tube-32-x-200-w-rim-Borosilicate-Glass-p/7632.htm
 [15]: https://www.spectrum-scientifics.com/Test-Tubes-w-Rim-25mm-x-200mm-p/3980.htm
 [16]: https://www.prusaprinters.org/prints/155946-black-iron-pipe-led-meeting-status-indicator
-[17]: https://www.youtube.com/watch?v=wzJczCJFJXQ
+[17]: https://www.youtube.com/playlist?list=PL8L4p4mQPaKp8p0ynjlbCXPw_6nZl_98o
