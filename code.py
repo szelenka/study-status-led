@@ -9,9 +9,7 @@ import board
 
 import neopixel
 from adafruit_led_animation.animation.solid import Solid
-from adafruit_led_animation.animation.chase import Chase
-from adafruit_led_animation.animation.comet import Comet
-from adafruit_led_animation.animation.pulse import Pulse
+from adafruit_led_animation.animation.rainbowchase import RainbowChase
 from adafruit_requests import Session
 
 # Get wifi details and more from a secrets.py file
@@ -32,9 +30,10 @@ def init():
     global requests
     connect_to_wifi()
     requests = Session(SocketPool(radio), create_default_context())
-    update_clock()
+    _now = update_clock()
     pixels.fill(settings.BLACK)
     pixels.show()
+    return _now.tm_mday
 
 
 def deque(iterable, value, max_values=10):
@@ -69,12 +68,19 @@ def http_request(method, url, retry_attempts: int = 0, *args, **kwargs):
     """Execute a HTTP Request"""
     print(f"{method}: {url}")
     _now = monotonic()
-    resp = requests.request(method, url, *args, **kwargs)
+    try:
+        resp = requests.request(method, url, *args, **kwargs)
+    except (RuntimeError,) as ex:
+        if retry_attempts < settings.MAX_RETRY_ATTEMPTS:
+            sleep(settings.SLEEP_INTERVAL)
+            return http_request(method=method, url=url, retry_attempts=retry_attempts + 1, *args, **kwargs)
+        raise ex
+
     deque(rolling_request_duration, monotonic() - _now)
     if 429 == resp.status_code >= 500:
         if retry_attempts < settings.MAX_RETRY_ATTEMPTS:
             sleep(settings.SLEEP_INTERVAL)
-            return http_request(method=method, url=url, retry_attempts=retry_attempts+1, *args, **kwargs)
+            return http_request(method=method, url=url, retry_attempts=retry_attempts + 1, *args, **kwargs)
     if 400 <= resp.status_code > 500:
         print(f"Unhandled status_code for url: {url}")
         raise HTTPRequestError(resp.content)
@@ -93,7 +99,7 @@ def update_clock():
         ).text
         _now = localtime(int(data) + settings.TZ_OFFSET * 3600)
         clock.datetime = _now
-    except (HTTPRequestError, OverflowError, ) as ex:
+    except (HTTPRequestError, OverflowError,) as ex:
         print(ex)
 
     return _now
@@ -112,9 +118,9 @@ def get_user_status():
         ).json()
         _status = data["status"].upper()
         print(f"Status: {_status}")
-    except (HTTPRequestError, ) as ex:
+    except (HTTPRequestError,) as ex:
         print(ex)
-    except (KeyError, AttributeError, ) as ex:
+    except (KeyError, AttributeError,) as ex:
         print(f"Unable to retrieve status!")
         print(ex)
 
@@ -125,14 +131,8 @@ def animate(sequence):
     """Get an animation object"""
     if sequence.animation == 'Solid':
         s = Solid(pixels, sequence.color)
-    elif sequence.animation == 'Chase':
-        s = Chase(pixels, sequence.speed, sequence.color, size=2, spacing=3, reverse=choice([True, False]))
-    elif sequence.animation == 'Comet':
-        s = Comet(
-            pixels, sequence.speed, sequence.color, tail_length=settings.PIXEL_PER_STRIP, bounce=choice([True, False])
-        )
-    elif sequence.animation == 'Pulse':
-        s = Pulse(pixels, sequence.speed, sequence.color)
+    elif sequence.animation == 'RainbowChase':
+        s = RainbowChase(pixels, sequence.speed, size=2, spacing=3, reverse=choice([True, False]))
     else:
         s = None
         print(f"Unknown animation: {sequence.animation}")
@@ -154,7 +154,7 @@ seq = None
 requests = None
 
 # Start system
-init()
+today = init()
 while True:
     if isinstance(seq, Solid) and seq.colors[-1] == settings.BLACK:
         sleep(settings.SLEEP_INTERVAL - mean(rolling_request_duration))
@@ -164,8 +164,7 @@ while True:
 
     # update the clock every day
     if now.tm_mday != today:
-        update_clock()
-        today = now.tm_mday
+        today = update_clock().tm_mday
 
     # don't query during after-hours
     if settings.HOUR_START_OF_DAY > now.tm_hour > settings.HOUR_END_OF_DAY:

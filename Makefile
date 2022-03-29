@@ -6,53 +6,59 @@ ADAFRUIT_REQUESTS_VERSION = 1.11.1
 NEOPIXEL_VERSION = 6.3.0
 PIXELBUF_VERSION = 1.1.3
 
-setup.build::
-	mkdir -p build/ lib/
-
-stage.lib.adafruit_led_animation.%:: setup.build ## Install adafruit_led_animation
-	curl -SL --output build/adafruit_led_animation.zip https://github.com/adafruit/Adafruit_CircuitPython_LED_Animation/releases/download/$*/adafruit-circuitpython-led-animation-${CIRCUITPYTHON_VERSION}-mpy-$*.zip
-	unzip -o build/adafruit_led_animation.zip -d build/
+# ADAFRUIT_LED_ANIMATION
+lib/adafruit_led_animation: build/adafruit-circuitpython-led-animation-$(CIRCUITPYTHON_VERSION)-mpy-$(ADAFRUIT_LED_ANIMATION_VERSION)
 	rm -rf ./lib/adafruit_led_animation
-	mv build/adafruit-circuitpython-led-animation-${CIRCUITPYTHON_VERSION}-mpy-$*/lib/adafruit_led_animation ./lib
-	rm -f build/adafruit_led_animation.zip
-	rm -rf build/adafruit-circuitpython-led-animation-${CIRCUITPYTHON_VERSION}-mpy-$*
-	touch "build/$@"
+	cp -R build/adafruit-circuitpython-led-animation-$(CIRCUITPYTHON_VERSION)-mpy-$(ADAFRUIT_LED_ANIMATION_VERSION)/lib/adafruit_led_animation ./lib
 
-stage.lib.adafruit_requests.%: setup.build ## Install adafruit_requests
-	curl -SL --output build/adafruit_requests.zip https://github.com/adafruit/Adafruit_CircuitPython_Requests/releases/download/$*/adafruit-circuitpython-requests-${CIRCUITPYTHON_VERSION}-mpy-$*.zip
-	unzip -o build/adafruit_requests.zip -d build/
-	rm -f build/adafruit_requests.zip
+build/adafruit-circuitpython-led-animation-$(CIRCUITPYTHON_VERSION)-mpy-$(ADAFRUIT_LED_ANIMATION_VERSION): build/adafruit-circuitpython-led-animation-$(CIRCUITPYTHON_VERSION)-mpy-$(ADAFRUIT_LED_ANIMATION_VERSION).zip ## Install adafruit_led_animation
+	unzip -o build/adafruit-circuitpython-led-animation-$(CIRCUITPYTHON_VERSION)-mpy-$(ADAFRUIT_LED_ANIMATION_VERSION).zip -d build/
+
+build/adafruit-circuitpython-led-animation-$(CIRCUITPYTHON_VERSION)-mpy-$(ADAFRUIT_LED_ANIMATION_VERSION).zip: ## Download files
+	curl -SL --output '$@' https://github.com/adafruit/Adafruit_CircuitPython_LED_Animation/releases/download/$(ADAFRUIT_LED_ANIMATION_VERSION)/adafruit-circuitpython-led-animation-$(CIRCUITPYTHON_VERSION)-mpy-$(ADAFRUIT_LED_ANIMATION_VERSION).zip
+
+# ADAFRUIT_REQUESTS
+lib/adafruit_requests.mpy: build/adafruit-circuitpython-requests-$(CIRCUITPYTHON_VERSION)-mpy-$(ADAFRUIT_REQUESTS_VERSION) ## Install adafruit_requests
 	rm -f ./lib/adafruit_requests.mpy
-	mv build/adafruit-circuitpython-requests-${CIRCUITPYTHON_VERSION}-mpy-$*/lib/*.mpy ./lib
-	rm -rf build/adafruit-circuitpython-requests-${CIRCUITPYTHON_VERSION}-mpy-$*
-	touch "build/$@"
+	cp build/adafruit-circuitpython-requests-$(CIRCUITPYTHON_VERSION)-mpy-$(ADAFRUIT_REQUESTS_VERSION)/lib/*.mpy ./lib
 
-stage.lib.neopixels.%: setup.build stage.lib.pixelbuf.$(PIXELBUF_VERSION) ## Install neopixel
-	curl -SL --output build/neopixel.zip https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel/releases/download/$*/adafruit-circuitpython-neopixel-${CIRCUITPYTHON_VERSION}-mpy-$*.zip
-	unzip -o build/neopixel.zip -d build/
-	rm -f build/neopixel.zip
+build/adafruit-circuitpython-requests-$(CIRCUITPYTHON_VERSION)-mpy-$(ADAFRUIT_REQUESTS_VERSION): build/adafruit-circuitpython-requests-$(CIRCUITPYTHON_VERSION)-mpy-$(ADAFRUIT_REQUESTS_VERSION).zip ## Install adafruit_requests
+	unzip -o build/adafruit-circuitpython-requests-$(CIRCUITPYTHON_VERSION)-mpy-$(ADAFRUIT_REQUESTS_VERSION).zip -d build/
+
+build/adafruit-circuitpython-requests-$(CIRCUITPYTHON_VERSION)-mpy-$(ADAFRUIT_REQUESTS_VERSION).zip: ## Download files
+	curl -SL --output '$@' https://github.com/adafruit/Adafruit_CircuitPython_Requests/releases/download/$(ADAFRUIT_REQUESTS_VERSION)/adafruit-circuitpython-requests-$(CIRCUITPYTHON_VERSION)-mpy-$(ADAFRUIT_REQUESTS_VERSION).zip
+
+# ADAFRUIT_NEOPIXEL
+lib/neopixel.mpy: build/adafruit-circuitpython-neopixel-$(CIRCUITPYTHON_VERSION)-mpy-$(NEOPIXEL_VERSION) lib/adafruit_pixelbuf.mpy ## Install neopixel
 	rm -f ./lib/neopixel.mpy
-	mv build/adafruit-circuitpython-neopixel-${CIRCUITPYTHON_VERSION}-mpy-$*/lib/*.mpy ./lib
-	rm -rf build/adafruit-circuitpython-neopixel-${CIRCUITPYTHON_VERSION}-mpy-$*
-	touch "build/$@"
+	cp build/adafruit-circuitpython-neopixel-$(CIRCUITPYTHON_VERSION)-mpy-$(NEOPIXEL_VERSION)/lib/*.mpy ./lib
 
-stage.lib.pixelbuf.%: setup.build ## Install pixelbuf
-	curl -SL --output build/pixelbuf.zip https://github.com/adafruit/Adafruit_CircuitPython_Pixelbuf/releases/download/$*/adafruit-circuitpython-pixelbuf-${CIRCUITPYTHON_VERSION}-mpy-$*.zip
-	unzip -o build/pixelbuf.zip -d build/
-	rm -f build/pixelbuf.zip
+build/adafruit-circuitpython-neopixel-$(CIRCUITPYTHON_VERSION)-mpy-$(NEOPIXEL_VERSION): build/adafruit-circuitpython-neopixel-$(CIRCUITPYTHON_VERSION)-mpy-$(NEOPIXEL_VERSION).zip ## Install adafruit_requests
+	unzip -o build/adafruit-circuitpython-neopixel-$(CIRCUITPYTHON_VERSION)-mpy-$(NEOPIXEL_VERSION).zip -d build/
+
+build/adafruit-circuitpython-neopixel-$(CIRCUITPYTHON_VERSION)-mpy-$(NEOPIXEL_VERSION).zip: ## Download files
+	curl -SL --output '$@' https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel/releases/download/$(NEOPIXEL_VERSION)/adafruit-circuitpython-neopixel-$(CIRCUITPYTHON_VERSION)-mpy-$(NEOPIXEL_VERSION).zip
+
+# ADAFRUIT_PIXELBUF
+lib/adafruit_pixelbuf.mpy: build/adafruit-circuitpython-pixelbuf-$(CIRCUITPYTHON_VERSION)-mpy-$(PIXELBUF_VERSION) ## Install pixelbuf
 	rm -f ./lib/adafruit_pixelbuf.mpy
-	mv build/adafruit-circuitpython-pixelbuf-${CIRCUITPYTHON_VERSION}-mpy-$*/lib/*.mpy ./lib
-	rm -rf build/adafruit-circuitpython-pixelbuf-${CIRCUITPYTHON_VERSION}-mpy-$*
-	touch "build/$@"
+	cp build/adafruit-circuitpython-pixelbuf-$(CIRCUITPYTHON_VERSION)-mpy-$(PIXELBUF_VERSION)/lib/*.mpy ./lib
 
-stage.lib.all:: clean stage.lib.adafruit_requests.$(ADAFRUIT_REQUESTS_VERSION) stage.lib.adafruit_led_animation.$(ADAFRUIT_LED_ANIMATION_VERSION) stage.lib.neopixels.$(NEOPIXEL_VERSION) ## Install all packages
+build/adafruit-circuitpython-pixelbuf-$(CIRCUITPYTHON_VERSION)-mpy-$(PIXELBUF_VERSION): build/adafruit-circuitpython-pixelbuf-$(CIRCUITPYTHON_VERSION)-mpy-$(PIXELBUF_VERSION).zip ## Install adafruit_requests
+	unzip -o $@.zip -d build/
+
+build/adafruit-circuitpython-pixelbuf-$(CIRCUITPYTHON_VERSION)-mpy-$(PIXELBUF_VERSION).zip: ## Download files
+	curl -SL --output $@ https://github.com/adafruit/Adafruit_CircuitPython_Pixelbuf/releases/download/$(PIXELBUF_VERSION)/adafruit-circuitpython-pixelbuf-$(CIRCUITPYTHON_VERSION)-mpy-$(PIXELBUF_VERSION).zip
+
+stage.lib.all: lib/adafruit_requests.mpy lib/neopixel.mpy lib/adafruit_led_animation ## Install all packages
 	@true
 
-copy-files::
+copy-files: stage.lib.all ## Copy files to attached volume
 	mkdir -p $(CIRCUITPY_VOLUME)/lib
 	cp -R ./lib $(CIRCUITPY_VOLUME)/lib
 	cp *.py $(CIRCUITPY_VOLUME)
 
 clean:: ## Clean build & lib directories
 	rm -rf build/ lib/
+	mkdir -p build/ lib/
 	touch lib/.gitkeep
