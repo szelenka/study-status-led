@@ -50,10 +50,6 @@ def connect_to_wifi():
     print("Available WiFi networks:")
     pixels.fill(settings.AQUA)
     pixels.show()
-    for network in radio.start_scanning_networks():
-        print("\t%s\t\tRSSI: %d\tChannel: %d" % (str(network.ssid, "utf-8"), network.rssi, network.channel))
-    radio.stop_scanning_networks()
-
     print("Connecting to %s ..." % settings.WIFI_SSID)
     pixels.fill(settings.JADE)
     pixels.show()
@@ -67,20 +63,22 @@ def connect_to_wifi():
 def http_request(method, url, retry_attempts: int = 0, *args, **kwargs):
     """Execute a HTTP Request"""
     print(f"{method}: {url}")
+    kwargs.setdefault('timeout', 1)
     _now = monotonic()
     try:
         resp = requests.request(method, url, *args, **kwargs)
-    except (RuntimeError,) as ex:
+    except (RuntimeError, ) as ex:
         if retry_attempts < settings.MAX_RETRY_ATTEMPTS:
+            print(f"{ex}: sleep {settings.SLEEP_INTERVAL}s")
             sleep(settings.SLEEP_INTERVAL)
-            return http_request(method=method, url=url, retry_attempts=retry_attempts + 1, *args, **kwargs)
+            return http_request(method=method, url=url, retry_attempts=retry_attempts+1, *args, **kwargs)
         raise ex
 
     deque(rolling_request_duration, monotonic() - _now)
     if 429 == resp.status_code >= 500:
         if retry_attempts < settings.MAX_RETRY_ATTEMPTS:
             sleep(settings.SLEEP_INTERVAL)
-            return http_request(method=method, url=url, retry_attempts=retry_attempts + 1, *args, **kwargs)
+            return http_request(method=method, url=url, retry_attempts=retry_attempts+1, *args, **kwargs)
     if 400 <= resp.status_code > 500:
         print(f"Unhandled status_code for url: {url}")
         raise HTTPRequestError(resp.content)
@@ -97,9 +95,10 @@ def update_clock():
             method='GET',
             url="https://io.adafruit.com/api/v2/time/seconds"
         ).text
+        print(f"Timestamp: {data}")
         _now = localtime(int(data) + settings.TZ_OFFSET * 3600)
         clock.datetime = _now
-    except (HTTPRequestError, OverflowError,) as ex:
+    except (HTTPRequestError, OverflowError, ) as ex:
         print(ex)
 
     return _now
@@ -118,9 +117,9 @@ def get_user_status():
         ).json()
         _status = data["status"].upper()
         print(f"Status: {_status}")
-    except (HTTPRequestError,) as ex:
+    except (HTTPRequestError, ) as ex:
         print(ex)
-    except (KeyError, AttributeError,) as ex:
+    except (KeyError, AttributeError, ) as ex:
         print(f"Unable to retrieve status!")
         print(ex)
 
@@ -132,7 +131,7 @@ def animate(sequence):
     if sequence.animation == 'Solid':
         s = Solid(pixels, sequence.color)
     elif sequence.animation == 'RainbowChase':
-        s = RainbowChase(pixels, sequence.speed, size=2, spacing=3, reverse=choice([True, False]))
+        s = RainbowChase(pixels, sequence.speed, size=2, spacing=3, reverse=True)
     else:
         s = None
         print(f"Unknown animation: {sequence.animation}")
@@ -140,22 +139,35 @@ def animate(sequence):
     return s
 
 
-# Setup global variables
-clock = RTC()
-pixels = neopixel.NeoPixel(
-    getattr(board, settings.PIXEL_PIN), settings.PIXEL_NUM, brightness=settings.PIXEL_BRIGHTNESS, auto_write=False
-)
-rolling_request_duration = []
-timer_check_status = 0
-current_status = ''
-prev_status = ''
-today = None
-seq = None
-requests = None
+def main():
+    global clock, pixels, rolling_request_duration, timer_check_status, current_status, prev_status, today, seq, requests
+    # Setup global variables
+    clock = RTC()
+    try:
+        pixels = neopixel.NeoPixel(
+            getattr(board, settings.PIXEL_PIN), settings.PIXEL_NUM, brightness=settings.PIXEL_BRIGHTNESS, auto_write=False
+        )
+    except ValueError:
+        pixels.deinit()
+        pixels = neopixel.NeoPixel(
+            getattr(board, settings.PIXEL_PIN), settings.PIXEL_NUM, brightness=settings.PIXEL_BRIGHTNESS, auto_write=False
+        )
+    rolling_request_duration = []
+    timer_check_status = 0
+    current_status = ''
+    prev_status = ''
+    today = None
+    seq = None
+    requests = None
 
-# Start system
-today = init()
-while True:
+    # Start system
+    today = init()
+    while True:
+        loop()
+
+
+def loop():
+    global current_status, prev_status, today, timer_check_status, seq
     if isinstance(seq, Solid) and seq.colors[-1] == settings.BLACK:
         sleep(settings.SLEEP_INTERVAL - mean(rolling_request_duration))
 
@@ -169,7 +181,7 @@ while True:
     # don't query during after-hours
     if settings.HOUR_START_OF_DAY > now.tm_hour > settings.HOUR_END_OF_DAY:
         print("Outside business hours, will not query")
-        continue
+        return
 
     # check if there's a new status every so often
     if timer_check_status < ts_now:
@@ -178,11 +190,21 @@ while True:
 
     if not hasattr(settings, f'STATUS_{current_status}'):
         print(f"Unknown status: {current_status}")
-        continue
+        return
 
     if current_status != prev_status:
         seq = animate(sequence=getattr(settings, f'STATUS_{current_status}'))
         prev_status = current_status
 
     if hasattr(seq, 'animate'):
+        if hasattr(seq, 'reverse'):
+            seq.reverse = round(monotonic() / 60, 0) % 2 == 0
         seq.animate()
+
+
+while True:
+    try:
+        main()
+    except Exception as ex:
+        print(ex)
+        sleep(10)
